@@ -5,9 +5,9 @@
  * @invite M8DBtcZjXD
  * @version 1.0.2
  * @description Listen or even talk in a voice chat while being self-deafened.
- * @website https://github.com/arg0NNY/DiscordPlugins-FakeDeafen/tree/master
- * @source https://github.com/arg0NNY/DiscordPlugins-FakeDeafen/blob/master/FakeDeafen.plugin.js
- * @updateUrl https://raw.githubusercontent.com/arg0NNY/DiscordPlugins-FakeDeafen/master/FakeDeafen.plugin.js
+ * @website https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main
+ * @source https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/blob/main/FakeDeafen.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js
  */
 
 module.exports = (() => {
@@ -23,8 +23,8 @@ module.exports = (() => {
             ],
             "version": "1.0.2",
             "description": "Listen or even talk in a voice chat while being self-deafened.",
-            github: "https://github.com/arg0NNY/DiscordPlugins-FakeDeafen/tree/master",
-            github_raw: "https://raw.githubusercontent.com/arg0NNY/DiscordPlugins-FakeDeafen/master/FakeDeafen.plugin.js"
+            github: "https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main",
+            github_raw: "https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js"
         },
         "changelog": [{
             "type": "fixed",
