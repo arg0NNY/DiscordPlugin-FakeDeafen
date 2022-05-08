@@ -1,4 +1,4 @@
-# [FakeDeafen](https://github.com/arg0NNY/DiscordPlugins-FakeDeafen/tree/master) ![Status][status-unofficial-badge] ![Version][fakedeafen-version-badge]
+# [FakeDeafen](https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main) ![Status][status-unofficial-badge] ![Version][fakedeafen-version-badge]
 Listen or even talk in a voice chat while being self-deafened.
 
 ![Example](https://user-images.githubusercontent.com/52377180/151658665-3d15c25f-3edf-4a52-99e9-a1afbdf52e0f.gif)
