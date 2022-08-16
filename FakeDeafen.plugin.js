@@ -3,7 +3,7 @@
  * @author arg0NNY
  * @authorLink https://github.com/arg0NNY/DiscordPlugins
  * @invite M8DBtcZjXD
- * @version 1.0.2
+ * @version 1.0.3
  * @description Listen or even talk in a voice chat while being self-deafened.
  * @website https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main
  * @source https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/blob/main/FakeDeafen.plugin.js
@@ -21,16 +21,16 @@ module.exports = (() => {
                     "github_username": 'arg0NNY'
                 }
             ],
-            "version": "1.0.2",
+            "version": "1.0.3",
             "description": "Listen or even talk in a voice chat while being self-deafened.",
             github: "https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main",
             github_raw: "https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js"
         },
         "changelog": [{
             "type": "fixed",
-            "title": "Moved",
+            "title": "Fixed",
             "items": [
-                "Plugin has been moved to separate repo. Update links have been changed."
+                "Fixed button misplaced bug."
             ]
         }],
         "defaultConfig": [
@@ -83,7 +83,8 @@ module.exports = (() => {
                 ContextMenu,
                 Toasts,
                 DiscordModules,
-                DiscordSelectors
+                DiscordSelectors,
+                PluginUtilities
             } = Api;
 
             const {
@@ -98,6 +99,8 @@ module.exports = (() => {
                 ENABLE: 'ptt_start',
                 DISABLE: 'ptt_stop'
             };
+
+            const Selectors = WebpackModules.getByProps('nameTag', 'godlike');
 
             const ChannelManager = WebpackModules.getModule(m => m.default?.disconnect && m.default?.selectChannel).default;
             const AudioDeviceMenu = WebpackModules.getModule(m => m.default?.displayName === 'AudioDeviceMenu');
@@ -142,6 +145,20 @@ module.exports = (() => {
                     this.fixated = false;
                     this.patches();
                     this.panelButton();
+                    this.injectCSS();
+                }
+
+                injectCSS() {
+                    PluginUtilities.addStyle(this.getName(), `
+                    .${Selectors.withTagAsButton}, .${Selectors.withTagless} {
+                        min-width: 0;
+                        flex: 1;
+                    }
+                    `);
+                }
+
+                clearCSS() {
+                    PluginUtilities.removeStyle(this.getName());
                 }
 
                 allowed() {
@@ -231,6 +248,7 @@ module.exports = (() => {
 
                 onStop() {
                     WebSocket.prototype.send = WebSocket.prototype.original;
+                    this.clearCSS();
                     Patcher.unpatchAll();
                 }
 
