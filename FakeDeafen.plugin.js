@@ -3,7 +3,7 @@
  * @author arg0NNY
  * @authorLink https://github.com/arg0NNY/DiscordPlugins
  * @invite M8DBtcZjXD
- * @version 1.0.3
+ * @version 1.0.4
  * @description Listen or even talk in a voice chat while being self-deafened.
  * @website https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main
  * @source https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/blob/main/FakeDeafen.plugin.js
@@ -21,7 +21,7 @@ module.exports = (() => {
                     "github_username": 'arg0NNY'
                 }
             ],
-            "version": "1.0.3",
+            "version": "1.0.4",
             "description": "Listen or even talk in a voice chat while being self-deafened.",
             github: "https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main",
             github_raw: "https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js"
@@ -30,7 +30,7 @@ module.exports = (() => {
             "type": "fixed",
             "title": "Fixed",
             "items": [
-                "Fixed button misplaced bug."
+                "Plugin works in the latest Discord breakdown update."
             ]
         }],
         "defaultConfig": [
@@ -84,14 +84,22 @@ module.exports = (() => {
                 Toasts,
                 DiscordModules,
                 DiscordSelectors,
-                PluginUtilities
+                PluginUtilities,
+                ReactTools
             } = Api;
 
             const {
                 React,
-                VoiceInfo,
-                SoundModule
+                VoiceInfo
             } = DiscordModules;
+
+            function getMangled(filter) {
+                const target = WebpackModules.getModule(m => Object.values(m).some(filter), {searchGetters: false});
+                return target ? [
+                    target,
+                    Object.keys(target).find(k => filter(target[k]))
+                ] : [];
+            }
 
             let toggleButton;
 
@@ -99,12 +107,15 @@ module.exports = (() => {
                 ENABLE: 'ptt_start',
                 DISABLE: 'ptt_stop'
             };
+            const SoundModule = {
+                playSound: WebpackModules.getModule(m => m?.toString?.().includes('getSoundpack'), {searchExports: true})
+            }
 
             const Selectors = WebpackModules.getByProps('nameTag', 'godlike');
 
-            const ChannelManager = WebpackModules.getModule(m => m.default?.disconnect && m.default?.selectChannel).default;
-            const AudioDeviceMenu = WebpackModules.getModule(m => m.default?.displayName === 'AudioDeviceMenu');
-            const PanelButton = WebpackModules.getByDisplayName('PanelButton');
+            const ChannelManager = WebpackModules.getByProps('disconnect', 'selectChannel');
+            const AudioDeviceMenu = getMangled(m => m?.toString?.().includes('voice-settings'));
+            const PanelButton = WebpackModules.getModule(m => m?.toString?.().includes('PANEL_BUTTON'), {searchExports: true});
 
             class PanelButtonComponent extends React.Component {
                 constructor(props) {
@@ -165,13 +176,14 @@ module.exports = (() => {
                     return VoiceInfo.isMute() || VoiceInfo.isDeaf();
                 }
 
-                async panelButton() {
-                    const Account = await ZLibrary.ReactComponents.getComponentByName('Account', DiscordSelectors.AccountDetails.container.value);
+                panelButton() {
+                    const Account = ReactTools.getComponents(document.querySelector(DiscordSelectors.AccountDetails.container.value))
+                        .find(m => m?.prototype?.renderNameTag);
 
-                    Patcher.after(Account.component.prototype, 'render', (self, _, { props }) => {
+                    Patcher.after(Account.prototype, 'render', (self, _, { props }) => {
                         if (!this.settings.accountButton) return;
 
-                        props.children.find(e => e.type.displayName === 'Flex')?.props.children.unshift(this.buildPanelButton());
+                        props.children.find(e => e.type?.Align)?.props.children.unshift(this.buildPanelButton());
                     });
                 }
 
@@ -200,7 +212,7 @@ module.exports = (() => {
                 }
 
                 patchAudioDeviceMenu() {
-                    Patcher.after(AudioDeviceMenu, 'default', (self, _, value) => {
+                    Patcher.after(...AudioDeviceMenu, (self, _, value) => {
                         value.props.children.props.children.push(this.buildContextMenuOptions());
                     });
                 }
