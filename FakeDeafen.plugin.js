@@ -3,7 +3,7 @@
  * @author arg0NNY
  * @authorLink https://github.com/arg0NNY/DiscordPlugins
  * @invite M8DBtcZjXD
- * @version 1.0.4
+ * @version 1.0.5
  * @description Listen or even talk in a voice chat while being self-deafened.
  * @website https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main
  * @source https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/blob/main/FakeDeafen.plugin.js
@@ -21,7 +21,7 @@ module.exports = (() => {
                     "github_username": 'arg0NNY'
                 }
             ],
-            "version": "1.0.4",
+            "version": "1.0.5",
             "description": "Listen or even talk in a voice chat while being self-deafened.",
             github: "https://github.com/arg0NNY/DiscordPlugin-FakeDeafen/tree/main",
             github_raw: "https://raw.githubusercontent.com/arg0NNY/DiscordPlugin-FakeDeafen/main/FakeDeafen.plugin.js"
@@ -30,7 +30,7 @@ module.exports = (() => {
             "type": "fixed",
             "title": "Fixed",
             "items": [
-                "Plugin works in the latest Discord breakdown update."
+                "Plugin has been fixed and adjusted for the latest Discord update."
             ]
         }],
         "defaultConfig": [
@@ -62,7 +62,7 @@ module.exports = (() => {
         getVersion() { return config.info.version; }
 
         load() {
-            BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
+            BdApi.UI.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
                 confirmText: "Download Now",
                 cancelText: "Cancel",
                 onConfirm: () => {
@@ -90,7 +90,9 @@ module.exports = (() => {
 
             const {
                 React,
-                VoiceInfo
+                VoiceInfo,
+                ChannelActions,
+                SelectedChannelStore
             } = DiscordModules;
 
             function getMangled(filter) {
@@ -107,14 +109,10 @@ module.exports = (() => {
                 ENABLE: 'ptt_start',
                 DISABLE: 'ptt_stop'
             };
-            const SoundModule = {
-                playSound: WebpackModules.getModule(m => m?.toString?.().includes('getSoundpack'), {searchExports: true})
-            }
 
             const Selectors = WebpackModules.getByProps('nameTag', 'godlike');
 
-            const ChannelManager = WebpackModules.getByProps('disconnect', 'selectChannel');
-            const AudioDeviceMenu = getMangled(m => m?.toString?.().includes('voice-settings'));
+            const SoundModule = WebpackModules.getByProps('playSound', 'createSound');
             const PanelButton = WebpackModules.getModule(m => m?.toString?.().includes('PANEL_BUTTON'), {searchExports: true});
 
             class PanelButtonComponent extends React.Component {
@@ -160,7 +158,7 @@ module.exports = (() => {
                 }
 
                 injectCSS() {
-                    PluginUtilities.addStyle(this.getName(), `
+                    BdApi.DOM.addStyle(this.getName(), `
                     .${Selectors.withTagAsButton}, .${Selectors.withTagless} {
                         min-width: 0;
                         flex: 1;
@@ -169,7 +167,7 @@ module.exports = (() => {
                 }
 
                 clearCSS() {
-                    PluginUtilities.removeStyle(this.getName());
+                    BdApi.DOM.removeStyle(this.getName());
                 }
 
                 allowed() {
@@ -207,14 +205,14 @@ module.exports = (() => {
                         Toasts.warning('Fake Mute/Deafen has been automatically disabled');
                     }
 
-                    Patcher.before(ChannelManager, 'disconnect', (self, _) => {preventStop()});
-                    Patcher.before(ChannelManager, 'selectVoiceChannel', (self, _) => {preventStop()});
+                    Patcher.before(ChannelActions, 'disconnect', (self, _) => {preventStop()});
+                    Patcher.before(ChannelActions, 'selectVoiceChannel', (self, _) => {preventStop()});
                 }
 
                 patchAudioDeviceMenu() {
-                    Patcher.after(...AudioDeviceMenu, (self, _, value) => {
-                        value.props.children.props.children.push(this.buildContextMenuOptions());
-                    });
+                    this.unpatchContextMenu = BdApi.ContextMenu.patch('audio-device-context', (self) => {
+                        self.props.children.props.children.push(this.buildContextMenuOptions());
+                    })
                 }
 
                 buildContextMenuOptions() {
@@ -225,7 +223,7 @@ module.exports = (() => {
                                 type: "toggle",
                                 label: "Fake Mute/Deafen",
                                 active: this.fixated,
-                                disabled: !this.fixated && !this.allowed(),
+                                disabled: !this.fixated && (!this.allowed() || !SelectedChannelStore.getVoiceChannelId()),
                                 action: () => {this.toggleFixate()}
                             },
                         ]
@@ -234,6 +232,7 @@ module.exports = (() => {
 
                 toggleFixate(status = null) {
                     if ((!this.fixated || status === true) && !this.allowed()) return Toasts.error('Mute or Deaf yourself first');
+                    if (!SelectedChannelStore.getVoiceChannelId()) return Toasts.error('Connect to the channel first');
 
                     this.fixated = status === null ? !this.fixated : status;
                     if (this.settings.sounds) SoundModule.playSound(this.fixated ? Sounds.ENABLE : Sounds.DISABLE, .4);
@@ -262,6 +261,7 @@ module.exports = (() => {
                     WebSocket.prototype.send = WebSocket.prototype.original;
                     this.clearCSS();
                     Patcher.unpatchAll();
+                    this.unpatchContextMenu?.();
                 }
 
                 getSettingsPanel() {
